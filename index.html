@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Forest Eats Memories</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      font-family: Georgia, 'Times New Roman', serif;
+    }
+
+    #game-container {
+      position: relative;
+      image-rendering: pixelated;
+    }
+
+    #game-container canvas {
+      display: block;
+      outline: none;
+    }
+
+    /* Loading fallback */
+    #loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #404a54;
+      font-size: 13px;
+      letter-spacing: 3px;
+      pointer-events: none;
+      z-index: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <div id="loading">LOADING…</div>
+  </div>
+
+  <!-- Phaser 3 from CDN — requires internet connection on first load -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+
+  <!-- Utilities (load before scenes) -->
+  <script src="src/palette.js"></script>
+  <script src="src/AudioSystem.js"></script>
+  <script src="src/DrawUtils.js"></script>
+  <script src="src/DialogueSystem.js"></script>
+
+  <!-- Scenes -->
+  <script src="src/scenes/OpeningScene.js"></script>
+  <script src="src/scenes/CarScene.js"></script>
+  <script src="src/scenes/VillageScene.js"></script>
+  <script src="src/scenes/ForestScene.js"></script>
+  <script src="src/scenes/ShopScene.js"></script>
+  <script src="src/scenes/EndScene.js"></script>
+
+  <!-- Boot -->
+  <script src="src/main.js"></script>
+
+  <script>
+    // Hide loading text once Phaser canvas is created
+    window.addEventListener('load', () => {
+      const obs = new MutationObserver(() => {
+        if (document.querySelector('#game-container canvas')) {
+          document.getElementById('loading').style.display = 'none';
+          obs.disconnect();
+        }
+      });
+      obs.observe(document.getElementById('game-container'), { childList: true });
+    });
+  </script>
+</body>
+</html>
