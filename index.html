@@ -2,8 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="Near the village there is a forest. People enter when they are in pain. They always come back happy." />
+
+  <!-- PWA / home screen -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Forest Memories" />
+  <meta name="theme-color" content="#0a1018" />
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+
   <title>The Forest Eats Memories</title>
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -14,17 +28,27 @@
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      font-family: Georgia, 'Times New Roman', serif;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     #game-container {
       position: relative;
-      image-rendering: pixelated;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     #game-container canvas {
       display: block;
       outline: none;
+      /* crisp pixel scaling */
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
     }
 
     /* Loading fallback */
@@ -34,20 +58,65 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #404a54;
+      color: #2a3848;
+      font-family: Georgia, serif;
       font-size: 13px;
-      letter-spacing: 3px;
+      letter-spacing: 4px;
       pointer-events: none;
-      z-index: 0;
+    }
+
+    /* Portrait-mode nudge */
+    #rotate-hint {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #4a6070;
+      font-family: Georgia, serif;
+      font-size: 15px;
+      text-align: center;
+      gap: 20px;
+      padding: 40px;
+    }
+
+    #rotate-hint svg {
+      width: 52px;
+      height: 52px;
+      opacity: 0.5;
+      animation: spin 3s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      0%  { transform: rotate(0deg);   }
+      40% { transform: rotate(90deg);  }
+      100%{ transform: rotate(90deg);  }
+    }
+
+    @media (orientation: portrait) and (max-width: 900px) {
+      #rotate-hint { display: flex; }
     }
   </style>
 </head>
 <body>
-  <div id="game-container">
-    <div id="loading">LOADING…</div>
+
+  <!-- Portrait rotation nudge -->
+  <div id="rotate-hint" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <rect x="5" y="2" width="14" height="20" rx="2"/>
+      <path d="M9 21h6"/>
+    </svg>
+    <span>Rotate your device<br>for the best experience</span>
   </div>
 
-  <!-- Phaser 3 from CDN — requires internet connection on first load -->
+  <div id="game-container">
+    <div id="loading">loading…</div>
+  </div>
+
+  <!-- Phaser 3 — requires internet on first load, then cached offline -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
 
   <!-- Utilities (load before scenes) -->
@@ -68,16 +137,21 @@
   <script src="src/main.js"></script>
 
   <script>
-    // Hide loading text once Phaser canvas is created
-    window.addEventListener('load', () => {
-      const obs = new MutationObserver(() => {
-        if (document.querySelector('#game-container canvas')) {
-          document.getElementById('loading').style.display = 'none';
-          obs.disconnect();
-        }
-      });
-      obs.observe(document.getElementById('game-container'), { childList: true });
+    // Hide loading text once Phaser canvas is ready
+    const obs = new MutationObserver(() => {
+      if (document.querySelector('#game-container canvas')) {
+        document.getElementById('loading').style.display = 'none';
+        obs.disconnect();
+      }
     });
+    obs.observe(document.getElementById('game-container'), { childList: true });
+
+    // Register service worker for offline / installable PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
   </script>
 </body>
 </html>

@@ -38,7 +38,7 @@ class OpeningScene extends Phaser.Scene {
       ...lineStyle,
     }).setOrigin(0.5).setAlpha(0).setDepth(10);
 
-    const t3 = this.add.text(W/2, H/2 + 50, '— click or press any key to begin —', {
+    const t3 = this.add.text(W/2, H/2 + 50, '— tap or click to begin —', {
       ...lineStyle, fontSize: '12px', color: '#5a6a7a',
     }).setOrigin(0.5).setAlpha(0).setDepth(10);
 

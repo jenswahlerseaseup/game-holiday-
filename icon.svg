@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background: deep forest night -->
+  <rect width="512" height="512" fill="#0a1018"/>
+
+  <!-- Distant forest silhouette -->
+  <path d="M0 420 Q30 370 55 410 Q75 350 100 400 Q120 340 150 390
+           Q175 330 205 385 Q230 345 260 395 Q285 335 315 390
+           Q340 345 365 395 Q390 350 415 400 Q440 360 465 405
+           Q485 375 512 410 L512 512 L0 512 Z"
+        fill="#060c06"/>
+
+  <!-- Near treeline (darker) -->
+  <path d="M0 460 Q20 430 40 455 Q60 420 85 450 Q105 435 125 458
+           Q148 425 168 455 Q188 438 210 460
+           Q232 428 252 456 Q272 440 290 460
+           Q312 430 335 458 Q355 440 375 460
+           Q395 432 420 455 Q440 440 460 460
+           Q480 435 512 455 L512 512 L0 512 Z"
+        fill="#040808"/>
+
+  <!-- Left eye: outer halo -->
+  <circle cx="175" cy="226" r="54" fill="rgba(136,255,170,0.10)"/>
+  <circle cx="175" cy="226" r="34" fill="rgba(136,255,170,0.22)"/>
+  <circle cx="175" cy="226" r="18" fill="#88ffaa"/>
+  <circle cx="175" cy="226" r="10" fill="#ccffdd"/>
+  <circle cx="175" cy="226" r="6"  fill="#040804"/>
+  <!-- Left eye shine -->
+  <circle cx="179" cy="222" r="2.5" fill="rgba(255,255,255,0.9)"/>
+
+  <!-- Right eye: outer halo -->
+  <circle cx="337" cy="226" r="54" fill="rgba(136,255,170,0.10)"/>
+  <circle cx="337" cy="226" r="34" fill="rgba(136,255,170,0.22)"/>
+  <circle cx="337" cy="226" r="18" fill="#88ffaa"/>
+  <circle cx="337" cy="226" r="10" fill="#ccffdd"/>
+  <circle cx="337" cy="226" r="6"  fill="#040804"/>
+  <!-- Right eye shine -->
+  <circle cx="341" cy="222" r="2.5" fill="rgba(255,255,255,0.9)"/>
+
+  <!-- Very faint creature body silhouette (oval blur) -->
+  <ellipse cx="256" cy="265" rx="110" ry="55" fill="rgba(10,20,12,0.5)"/>
+</svg>

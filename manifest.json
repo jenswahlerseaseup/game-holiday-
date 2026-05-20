@@ -1,0 +1,21 @@
+{
+  "name": "The Forest Eats Memories",
+  "short_name": "Forest Memories",
+  "description": "A 2D story-driven game. Near the village there is a forest. People enter when they are in pain. They always come back happy.",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#000000",
+  "theme_color": "#0a1018",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false
+}
