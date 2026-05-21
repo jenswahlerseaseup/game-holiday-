@@ -3,27 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="description" content="Near the village there is a forest. People enter when they are in pain. They always come back happy." />
+  <meta name="description" content="A Ghibli-inspired automation factory game. Mine ore, smelt plates, build conveyor belt systems." />
 
   <!-- PWA / home screen -->
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Forest Memories" />
+  <meta name="apple-mobile-web-app-title" content="Forest Factory" />
   <meta name="theme-color" content="#0a1018" />
 
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon.svg" />
 
-  <title>The Forest Eats Memories</title>
+  <title>Forest Factory</title>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
       width: 100%; height: 100%;
-      background: #000;
+      background: #0a1008;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -45,20 +45,18 @@
     #game-container canvas {
       display: block;
       outline: none;
-      /* crisp pixel scaling */
       image-rendering: -webkit-optimize-contrast;
       image-rendering: pixelated;
       image-rendering: crisp-edges;
     }
 
-    /* Loading fallback */
     #loading {
       position: absolute;
       inset: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #2a3848;
+      color: #2a3828;
       font-family: Georgia, serif;
       font-size: 13px;
       letter-spacing: 4px;
@@ -71,11 +69,11 @@
       position: fixed;
       inset: 0;
       z-index: 9999;
-      background: #000;
+      background: #050c08;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: #4a6070;
+      color: #3a5040;
       font-family: Georgia, serif;
       font-size: 15px;
       text-align: center;
@@ -84,16 +82,15 @@
     }
 
     #rotate-hint svg {
-      width: 52px;
-      height: 52px;
+      width: 52px; height: 52px;
       opacity: 0.5;
       animation: spin 3s ease-in-out infinite;
     }
 
     @keyframes spin {
-      0%  { transform: rotate(0deg);   }
-      40% { transform: rotate(90deg);  }
-      100%{ transform: rotate(90deg);  }
+      0%   { transform: rotate(0deg);  }
+      40%  { transform: rotate(90deg); }
+      100% { transform: rotate(90deg); }
     }
 
     @media (orientation: portrait) and (max-width: 900px) {
@@ -103,7 +100,6 @@
 </head>
 <body>
 
-  <!-- Portrait rotation nudge -->
   <div id="rotate-hint" aria-hidden="true">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
       <rect x="5" y="2" width="14" height="20" rx="2"/>
@@ -116,28 +112,26 @@
     <div id="loading">loading…</div>
   </div>
 
-  <!-- Phaser 3 — requires internet on first load, then cached offline -->
+  <!-- Phaser 3 -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
 
-  <!-- Utilities (load before scenes) -->
-  <script src="src/palette.js"></script>
-  <script src="src/AudioSystem.js"></script>
-  <script src="src/DrawUtils.js"></script>
-  <script src="src/DialogueSystem.js"></script>
+  <!-- Constants (must load first) -->
+  <script src="src/constants.js"></script>
+
+  <!-- Procedural sprites -->
+  <script src="src/sprites.js"></script>
+
+  <!-- Simulation classes -->
+  <script src="src/game/Buildings.js"></script>
 
   <!-- Scenes -->
-  <script src="src/scenes/OpeningScene.js"></script>
-  <script src="src/scenes/CarScene.js"></script>
-  <script src="src/scenes/VillageScene.js"></script>
-  <script src="src/scenes/ForestScene.js"></script>
-  <script src="src/scenes/ShopScene.js"></script>
-  <script src="src/scenes/EndScene.js"></script>
+  <script src="src/scenes/GameScene.js"></script>
+  <script src="src/scenes/UIScene.js"></script>
 
   <!-- Boot -->
   <script src="src/main.js"></script>
 
   <script>
-    // Hide loading text once Phaser canvas is ready
     const obs = new MutationObserver(() => {
       if (document.querySelector('#game-container canvas')) {
         document.getElementById('loading').style.display = 'none';
@@ -146,7 +140,6 @@
     });
     obs.observe(document.getElementById('game-container'), { childList: true });
 
-    // Register service worker for offline / installable PWA
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(() => {});

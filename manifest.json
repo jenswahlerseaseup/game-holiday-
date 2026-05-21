@@ -1,11 +1,11 @@
 {
-  "name": "The Forest Eats Memories",
-  "short_name": "Forest Memories",
-  "description": "A 2D story-driven game. Near the village there is a forest. People enter when they are in pain. They always come back happy.",
+  "name": "Forest Factory",
+  "short_name": "Forest Factory",
+  "description": "A Ghibli-inspired automation factory game. Mine ore, smelt plates, build conveyor belt systems in a lush pixel-art world.",
   "start_url": "./",
   "display": "fullscreen",
   "orientation": "landscape",
-  "background_color": "#000000",
+  "background_color": "#0a1008",
   "theme_color": "#0a1018",
   "categories": ["games", "entertainment"],
   "icons": [
