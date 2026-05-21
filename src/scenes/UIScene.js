@@ -141,18 +141,19 @@ class UIScene extends Phaser.Scene {
   _refreshButtons() {
     this.btnObjs.forEach(({ tool, bg, icon }) => {
       const sel = tool.id === this.selectedTool;
-      bg.setTexture(sel ? 'btn_sel' : (tool.tex ? 'btn_bg' : 'btn_bg'));
-      // Update belt icon to match current direction
+      if (tool.id === 'remove') {
+        // Remove button uses icon only (bg is hidden); tint red when selected
+        icon.setTint(sel ? 0xff7070 : 0xffffff);
+      } else {
+        bg.setTexture(sel ? 'btn_sel' : 'btn_bg');
+        if (icon) icon.setTint(sel ? 0xeeffcc : 0xffffff);
+      }
+      // Belt icon tracks current rotation direction
       if (tool.id === 'belt' && icon) {
         icon.setTexture(`belt_${['R','D','L','U'][this.buildDir]}`);
       }
-      // Tint selected icon slightly
-      if (icon && tool.tex) {
-        icon.setTint(sel ? 0xeeffcc : 0xffffff);
-      }
     });
     this.rotBg.setTexture('btn_bg');
-    this.rotLabel.setColor(this.selectedTool === null ? '#c8d8a0' : '#c8d8a0');
   }
 
   // ── STATS ─────────────────────────────────────────────────────────────────

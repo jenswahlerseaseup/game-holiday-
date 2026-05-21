@@ -117,8 +117,10 @@ class GameScene extends Phaser.Scene {
     let dragged     = false;
 
     this.input.on('pointerdown', pointer => {
+      // Ignore clicks inside the toolbar strip at the bottom
+      if (pointer.y > this.scale.height - 95) return;
+
       if (pointer.button === 2) {
-        // Right-click: remove building
         this._handleRemove(pointer);
         return;
       }
@@ -149,6 +151,7 @@ class GameScene extends Phaser.Scene {
   }
 
   _handleClick(pointer) {
+    if (pointer.y > this.scale.height - 95) return;
     const gx   = Math.floor(pointer.worldX / T);
     const gy   = Math.floor(pointer.worldY / T);
     if (gx < 0 || gx >= W || gy < 0 || gy >= H) return;
@@ -165,6 +168,7 @@ class GameScene extends Phaser.Scene {
   }
 
   _handleRemove(pointer) {
+    if (pointer.y > this.scale.height - 95) return;
     const gx = Math.floor(pointer.worldX / T);
     const gy = Math.floor(pointer.worldY / T);
     if (gx < 0 || gx >= W || gy < 0 || gy >= H) return;
@@ -209,6 +213,10 @@ class GameScene extends Phaser.Scene {
       : type;
     const spr = this.add.image(gx * T + T / 2, gy * T + T / 2, texKey);
     spr.setDepth(2);
+    // Rotate directional buildings so output arrow points the right way
+    if (type === 'miner' || type === 'smelter') {
+      spr.setAngle(dir * 90); // sprite is drawn facing R; 90° steps for D/L/U
+    }
     this.bldSprites.set(k, spr);
 
     // Notify UI to update stats
