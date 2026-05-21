@@ -26,8 +26,9 @@ class GameScene extends Phaser.Scene {
     // Building sprites map: grid-key -> Phaser.GameObjects.Image
     this.bldSprites = new Map();
 
-    // Graphics layer for belt items (redrawn every frame)
+    // Graphics layer for belt items (redrawn every frame) — depth above buildings
     this.itemsGfx = this.add.graphics();
+    this.itemsGfx.setDepth(3);
 
     // Camera
     const cam = this.cameras.main;
@@ -87,13 +88,15 @@ class GameScene extends Phaser.Scene {
       for (let gx = 0; gx < W; gx++) {
         const tile = this.world[gy][gx];
         const key  = tile.ore ? tile.ore : `grass_${tile.variant}`;
-        this.terrainRT.draw(key, gx * T, gy * T);
+        // drawFrame accepts a texture key string (draw() does not)
+        this.terrainRT.drawFrame(key, undefined, gx * T, gy * T);
       }
     }
   }
 
   _drawGrid() {
     const g = this.add.graphics();
+    g.setDepth(1);
     g.lineStyle(1, 0x304050, 0.18);
     for (let gx = 0; gx <= W; gx++) g.lineBetween(gx * T, 0, gx * T, H * T);
     for (let gy = 0; gy <= H; gy++) g.lineBetween(0, gy * T, W * T, gy * T);
@@ -205,7 +208,7 @@ class GameScene extends Phaser.Scene {
       ? `belt_${['R','D','L','U'][dir]}`
       : type;
     const spr = this.add.image(gx * T + T / 2, gy * T + T / 2, texKey);
-    spr.setDepth(1);
+    spr.setDepth(2);
     this.bldSprites.set(k, spr);
 
     // Notify UI to update stats

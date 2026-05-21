@@ -163,10 +163,10 @@ class UIScene extends Phaser.Scene {
 
     const stats = gs.getStats();
     const lines = [
-      '🌿 Factory Stats',
+      '~ Factory Stats',
       `  Iron plates:   ${stats.iron_plate   || 0}`,
       `  Copper plates: ${stats.copper_plate || 0}`,
-      `  Belts running: ${gs.belts.length}`,
+      `  Belts: ${gs.belts.length}  Miners: ${gs.miners.length}`,
     ];
     this.statsText.setText(lines.join('\n'));
   }

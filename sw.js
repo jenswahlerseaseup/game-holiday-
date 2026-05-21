@@ -1,5 +1,5 @@
 // Service Worker — caches all game assets for offline play
-const CACHE  = 'forest-factory-v1';
+const CACHE  = 'forest-factory-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -18,15 +18,23 @@ self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE)
       .then(cache => cache.addAll(ASSETS))
-      .then(() => self.skipWaiting())
+      .then(() => self.skipWaiting()) // take over immediately
   );
 });
 
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.filter(k => k !== CACHE).map(k => caches.delete(k))
+      ))
+      .then(() => self.clients.claim())
+      .then(() => {
+        // Force all open tabs to reload so they get fresh files
+        return self.clients.matchAll({ type: 'window' }).then(clients => {
+          clients.forEach(client => client.navigate(client.url));
+        });
+      })
   );
 });
 
