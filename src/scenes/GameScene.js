@@ -264,45 +264,112 @@ class GameScene extends Phaser.Scene {
     this._drawItems();
   }
 
-  // ── RENDER ITEMS ─────────────────────────────────────────────────────────
+  // ── RENDER + ANIMATE ─────────────────────────────────────────────────────
 
   _drawItems() {
     const gfx = this.itemsGfx;
     gfx.clear();
+    const t = this.time.now / 1000; // seconds
 
+    // ── Belt moving-plank stripes ─────────────────────────────────────────
     for (const belt of this.belts) {
+      this._animBelt(gfx, belt, t);
+    }
+
+    // ── Items riding belts (with gentle bob) ─────────────────────────────
+    for (const belt of this.belts) {
+      const [dx, dy] = DVEC[belt.dir];
       for (const item of belt.items) {
-        const [dx, dy] = DVEC[belt.dir];
-        const wx = belt.gx * T + T / 2 + dx * (item.progress - 0.5) * T;
-        const wy = belt.gy * T + T / 2 + dy * (item.progress - 0.5) * T;
-        this._drawItem(gfx, item.type, wx, wy);
+        const wx  = belt.gx * T + T / 2 + dx * (item.progress - 0.5) * T;
+        const wy  = belt.gy * T + T / 2 + dy * (item.progress - 0.5) * T;
+        const bob = Math.sin(t * 5 + item.progress * Math.PI * 3) * 1.5;
+        this._drawItem(gfx, item.type, wx, wy + bob);
       }
     }
 
-    // Smelter output waiting items (show as dots above building)
+    // ── Smelter fire flicker + smoke ─────────────────────────────────────
     for (const sm of this.smelters) {
-      // Fire pulsing overlay
-      if (sm.processing) {
-        const alpha = 0.25 + 0.15 * Math.sin(Date.now() / 200);
-        gfx.fillStyle(0xf07000, alpha);
-        gfx.fillRect(sm.gx * T + 14, sm.gy * T + 28, 20, 16);
+      if (sm.heat > 0) {
+        const h   = sm.heat;
+        const f1  = (Math.sin(t * 16 + sm.gx * 2.3) * 0.5 + 0.5) * h;
+        const f2  = (Math.sin(t * 11 + sm.gy * 3.1 + 1) * 0.5 + 0.5) * h;
+        const f3  = (Math.sin(t * 23 + sm.gx + sm.gy) * 0.5 + 0.5) * h;
+
+        // Outer glow
+        gfx.fillStyle(0xe04000, f1 * 0.55);
+        gfx.fillRect(sm.gx * T + 13, sm.gy * T + 25, 22, 20);
+        // Mid fire
+        gfx.fillStyle(0xf07000, f2 * 0.65);
+        gfx.fillRect(sm.gx * T + 16, sm.gy * T + 28, 16, 15);
+        // Inner hot tip
+        gfx.fillStyle(0xffd040, f3 * 0.55);
+        gfx.fillRect(sm.gx * T + 20, sm.gy * T + 32, 8, 9);
+
+        // Smoke puff rising from chimney
+        const smokeY  = sm.gy * T + ((t * 18) % 18);
+        const smokeA  = h * 0.22 * (1 - ((t * 18) % 18) / 18);
+        gfx.fillStyle(0xb0b8c0, smokeA);
+        gfx.fillRect(sm.gx * T + 21, smokeY, 6, 4);
+        gfx.fillRect(sm.gx * T + 20, smokeY + 4, 8, 3);
       }
-      // Output stack indicator
+
+      // Output items hovering above the smelter
       if (sm.output.length > 0) {
-        const wx = sm.gx * T + T / 2;
-        const wy = sm.gy * T + 6;
+        const cx = sm.gx * T + T / 2;
+        const cy = sm.gy * T + 6;
         sm.output.forEach((type, i) => {
-          this._drawItem(gfx, type, wx + (i - sm.output.length / 2) * 10, wy);
+          const ox = cx + (i - (sm.output.length - 1) / 2) * 11;
+          this._drawItem(gfx, type, ox, cy);
         });
       }
     }
 
-    // Miner activity flash
+    // ── Miner drill pulse ─────────────────────────────────────────────────
     for (const mn of this.miners) {
-      const pct = mn.timer / mn.rate;
-      if (pct > 0.85) {
-        gfx.fillStyle(0xffd040, (pct - 0.85) / 0.15 * 0.4);
+      const pct   = mn.timer / mn.rate;
+      // Warm glow builds up as ore is about to pop out
+      const glow  = Math.max(0, pct - 0.5) / 0.5; // 0→1 in last half of cycle
+      if (glow > 0) {
+        gfx.fillStyle(0xffd040, glow * 0.35);
+        gfx.fillRect(mn.gx * T + 4, mn.gy * T + 4, T - 8, T - 8);
+      }
+      // Drill spin (rotating cross of bright pixels)
+      const angle = t * 6; // ~1 revolution/sec
+      const cx    = mn.gx * T + T / 2;
+      const cy    = mn.gy * T + T / 2 + 4;
+      const r     = 5;
+      const pulse = Math.sin(t * 8) * 0.4 + 0.6;
+      gfx.fillStyle(0xd0e8ff, pulse * 0.7 * Math.max(0.2, pct));
+      for (let a = 0; a < 4; a++) {
+        const ax = cx + Math.round(Math.cos(angle + a * Math.PI / 2) * r);
+        const ay = cy + Math.round(Math.sin(angle + a * Math.PI / 2) * r);
+        gfx.fillRect(ax - 1, ay - 1, 2, 2);
+      }
+      // Bright flash when ore is ejected
+      if (pct > 0.92) {
+        gfx.fillStyle(0xffffff, (pct - 0.92) / 0.08 * 0.6);
         gfx.fillRect(mn.gx * T + 2, mn.gy * T + 2, T - 4, T - 4);
+      }
+    }
+  }
+
+  // Moving plank-highlight stripes over each belt tile
+  _animBelt(gfx, belt, t) {
+    const [dx, dy] = DVEC[belt.dir];
+    const isH    = dx !== 0;
+    const bx     = belt.gx * T;
+    const by     = belt.gy * T;
+    // Positive dirs (R, D) move forward; negative dirs (L, U) move backward
+    const sign   = (belt.dir === 0 || belt.dir === 1) ? 1 : -1;
+    const offset = ((sign * t * BELT_SPEED * T) % T + T) % T;
+
+    gfx.fillStyle(0xd09858, 0.22);
+    for (let s = 0; s < 3; s++) {
+      const pos = (offset + s * (T / 3)) % T;
+      if (isH) {
+        gfx.fillRect(bx + pos - 1, by + 5, 2, T - 10);
+      } else {
+        gfx.fillRect(bx + 5, by + pos - 1, T - 10, 2);
       }
     }
   }
@@ -313,12 +380,12 @@ class GameScene extends Phaser.Scene {
     const c0 = parseInt(cols[1].replace('#', ''), 16);
     const c2 = parseInt(cols[3].replace('#', ''), 16);
     const c4 = parseInt(cols[4].replace('#', ''), 16);
-    const s = 6; // half-size
+    const s  = 6; // half-size
 
     gfx.fillStyle(c0);
-    gfx.fillRect(wx - s, wy - s, s * 2, s * 2);
+    gfx.fillRect(wx - s,     wy - s,     s * 2,  s * 2);
     gfx.fillStyle(c2);
-    gfx.fillRect(wx - s + 2, wy - s + 2, s - 1, s - 1);
+    gfx.fillRect(wx - s + 2, wy - s + 2, s - 1,  s - 1);
     gfx.fillStyle(c4);
     gfx.fillRect(wx - s + 3, wy - s + 3, 2, 2);
   }
