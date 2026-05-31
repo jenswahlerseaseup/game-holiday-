@@ -1,10 +1,11 @@
 // Service Worker — caches all game assets for offline play
-const CACHE  = 'forest-factory-v2';
+const CACHE  = 'forest-factory-v3';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './icon.svg',
+  './src/audio.js',
   './src/constants.js',
   './src/sprites.js',
   './src/game/Buildings.js',

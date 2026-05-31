@@ -43,3 +43,18 @@ const RECIPES = [
 ];
 
 const BELT_SPEED = 1.6; // tiles per second
+
+// Progressive production goals
+const GOALS = [
+  { name: 'First Metal',      req: { iron_plate: 10 } },
+  { name: 'Going Copper',     req: { iron_plate: 20, copper_plate: 10 } },
+  { name: 'Factory Worker',   req: { iron_plate: 50, copper_plate: 50 } },
+  { name: 'Mass Production',  req: { iron_plate: 200, copper_plate: 200 } },
+  { name: 'Grand Automaton',  req: { iron_plate: 500, copper_plate: 500 } },
+];
+
+const ORE_LABEL = {
+  iron_ore:   '#a0b8d0',
+  coal:       '#606050',
+  copper_ore: '#e89848',
+};

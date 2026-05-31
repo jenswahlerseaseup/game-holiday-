@@ -15,13 +15,14 @@ class Building {
 class Miner extends Building {
   constructor(gx, gy, dir, oreType) {
     super('miner', gx, gy, dir);
-    this.oreType = oreType;
-    this.timer   = 0;
-    this.rate    = 2.0; // seconds per ore
-    this.active  = false;
+    this.oreType      = oreType;
+    this.timer        = 0;
+    this.rate         = 2.0; // seconds per ore
+    this.justProduced = false;
   }
 
   update(dt, grid) {
+    this.justProduced = false;
     this.timer += dt;
     if (this.timer < this.rate) return;
 
@@ -32,7 +33,7 @@ class Miner extends Building {
       nb.addItem(this.oreType, 0);
       this.timer -= this.rate;
       if (this.timer > this.rate) this.timer = this.rate;
-      this.active = true;
+      this.justProduced = true;
     }
     // If blocked, clamp so we don't accumulate infinite time
     if (this.timer > this.rate) this.timer = this.rate;
@@ -104,12 +105,13 @@ class Belt extends Building {
 class Smelter extends Building {
   constructor(gx, gy, dir) {
     super('smelter', gx, gy, dir);
-    this.inventory  = {}; // type -> count (input buffer)
-    this.processing = null; // { recipe, timer }
-    this.output     = []; // queued output items
-    this.maxIn      = 6;
-    this.maxOut     = 4;
-    this.heat       = 0; // 0..1 visual indicator
+    this.inventory   = {}; // type -> count (input buffer)
+    this.processing  = null; // { recipe, timer }
+    this.output      = []; // queued output items
+    this.maxIn       = 6;
+    this.maxOut      = 4;
+    this.heat        = 0; // 0..1 visual indicator
+    this.justSmelted = false;
   }
 
   canAcceptItem(type) {
@@ -122,6 +124,7 @@ class Smelter extends Building {
   }
 
   update(dt, grid) {
+    this.justSmelted = false;
     // Start a recipe if idle and inputs available
     if (!this.processing && this.output.length < this.maxOut) {
       for (const recipe of RECIPES) {
@@ -143,7 +146,8 @@ class Smelter extends Building {
       this.heat = Math.min(1, this.heat + dt * 0.6);
       if (this.processing.timer >= this.processing.recipe.time) {
         this.output.push(this.processing.recipe.output);
-        this.processing = null;
+        this.processing  = null;
+        this.justSmelted = true;
       }
     } else {
       this.heat = Math.max(0, this.heat - dt * 0.2);

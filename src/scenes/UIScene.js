@@ -97,7 +97,7 @@ class UIScene extends Phaser.Scene {
       lineSpacing: 4,
     }).setScrollFactor(0).setDepth(20).setAlpha(0.9);
 
-    this.add.rectangle(6, 6, 160, 70, 0x0a1218, 0.7)
+    this.add.rectangle(6, 6, 180, 140, 0x0a1218, 0.7)
       .setScrollFactor(0).setDepth(19).setOrigin(0, 0);
 
     // Help text (top-right)
@@ -120,6 +120,14 @@ class UIScene extends Phaser.Scene {
     this._updateStats();
 
     this._refreshButtons();
+
+    // Goal completion banner
+    this.goalBanner = this.add.text(W_PX / 2, 80, '', {
+      fontSize: '16px', color: '#ffd040', fontFamily: 'Georgia, serif',
+      stroke: '#0a1218', strokeThickness: 4,
+    }).setOrigin(0.5, 0.5).setScrollFactor(0).setDepth(25).setAlpha(0);
+
+    this.registry.events.on('goalReached', goal => this._showGoalBanner(goal.name));
   }
 
   // ── TOOL SELECTION ───────────────────────────────────────────────────────
@@ -169,6 +177,32 @@ class UIScene extends Phaser.Scene {
       `  Copper plates: ${stats.copper_plate || 0}`,
       `  Belts: ${gs.belts.length}  Miners: ${gs.miners.length}`,
     ];
+
+    if (gs.goalIdx >= GOALS.length) {
+      lines.push('', '~ All Goals Complete!');
+    } else {
+      const goal = GOALS[gs.goalIdx];
+      lines.push('', `Goal: ${goal.name}`);
+      Object.entries(goal.req).forEach(([type, need]) => {
+        const have  = gs.produced[type] || 0;
+        const label = type.replace('_', ' ');
+        lines.push(`  ${label}: ${Math.min(have, need)}/${need}${have >= need ? ' ✓' : ''}`);
+      });
+    }
+
     this.statsText.setText(lines.join('\n'));
+  }
+
+  _showGoalBanner(name) {
+    this.tweens.killTweensOf(this.goalBanner);
+    this.goalBanner.setText(`~ ${name} ~`).setAlpha(1).setY(80);
+    this.tweens.add({
+      targets: this.goalBanner,
+      alpha: 0,
+      y: 50,
+      delay: 1500,
+      duration: 2500,
+      ease: 'Power2',
+    });
   }
 }

@@ -30,6 +30,12 @@ class GameScene extends Phaser.Scene {
     this.itemsGfx = this.add.graphics();
     this.itemsGfx.setDepth(3);
 
+    // Ghost placement preview (cursor position, shown before click)
+    this.ghostSpr = this.add.image(-T, -T, 'chest').setAlpha(0).setDepth(4);
+
+    // Ore highlight borders — visible when Miner tool is active
+    this.oreHighlights = this.add.graphics().setDepth(1).setAlpha(0);
+
     // Camera
     const cam = this.cameras.main;
     cam.setBounds(0, 0, W * T, H * T);
@@ -45,6 +51,12 @@ class GameScene extends Phaser.Scene {
     this.registry.set('gameScene', this);
     this.registry.set('buildDir', DIR.R);
     this.registry.set('selectedTool', null);
+
+    // Goal and production tracking
+    this.goalIdx = 0;
+    this.produced = {};
+    this._lastChestTotals = {};
+    this.registry.events.on('changedata-selectedTool', () => this._drawOreHighlights());
 
     // Start UIScene as overlay
     this.scene.launch('UIScene');
@@ -130,6 +142,7 @@ class GameScene extends Phaser.Scene {
     });
 
     this.input.on('pointermove', pointer => {
+      this._updateGhost(pointer);
       if (!pointer.isDown || !dragStart) return;
       const dx = pointer.x - dragStart.x;
       const dy = pointer.y - dragStart.y;
@@ -179,13 +192,13 @@ class GameScene extends Phaser.Scene {
 
   _placeBuilding(type, gx, gy, dir) {
     const k = this.grid.key(gx, gy);
-    if (this.grid.has(k)) return;
+    if (this.grid.has(k)) { if (typeof GameAudio !== 'undefined') GameAudio.invalid(); return; }
 
     let b;
     switch (type) {
       case 'miner': {
         const tile = this.world[gy][gx];
-        if (!tile.ore) return; // miners only go on ore tiles
+        if (!tile.ore) { if (typeof GameAudio !== 'undefined') GameAudio.invalid(); return; }
         b = new Miner(gx, gy, dir, tile.ore);
         this.miners.push(b);
         break;
@@ -218,6 +231,7 @@ class GameScene extends Phaser.Scene {
       spr.setAngle(dir * 90); // sprite is drawn facing R; 90° steps for D/L/U
     }
     this.bldSprites.set(k, spr);
+    if (typeof GameAudio !== 'undefined') GameAudio.place();
 
     // Notify UI to update stats
     this.registry.events.emit('buildingsChanged');
@@ -255,13 +269,16 @@ class GameScene extends Phaser.Scene {
 
     // Simulate
     this.miners.forEach(m => m.update(dt, this.grid));
+    if (this.miners.some(m => m.justProduced) && typeof GameAudio !== 'undefined') GameAudio.mine();
     // Belts: update from the "end" of chains first (prevents double-stepping)
     // Simple approach: just iterate multiple times at small steps if needed
     this.belts.forEach(bl => bl.update(dt, this.grid));
     this.smelters.forEach(s => s.update(dt, this.grid));
+    if (this.smelters.some(s => s.justSmelted) && typeof GameAudio !== 'undefined') GameAudio.smelt();
 
     // Draw items on belts + smelter fire overlay
     this._drawItems();
+    this._trackProduction();
   }
 
   // ── RENDER + ANIMATE ─────────────────────────────────────────────────────
@@ -400,5 +417,70 @@ class GameScene extends Phaser.Scene {
       });
     });
     return totals;
+  }
+
+  // ── GHOST PLACEMENT PREVIEW ──────────────────────────────────────────────
+
+  _updateGhost(pointer) {
+    const tool = this.registry.get('selectedTool');
+    if (!tool || tool === 'remove' || pointer.y > this.scale.height - 95) {
+      this.ghostSpr.setAlpha(0);
+      return;
+    }
+    const gx = Math.floor(pointer.worldX / T);
+    const gy = Math.floor(pointer.worldY / T);
+    if (gx < 0 || gx >= W || gy < 0 || gy >= H) { this.ghostSpr.setAlpha(0); return; }
+
+    const dir    = this.registry.get('buildDir') ?? DIR.R;
+    const texKey = tool === 'belt' ? `belt_${['R','D','L','U'][dir]}` : tool;
+    const valid  = !this.grid.has(this.grid.key(gx, gy)) &&
+                   (tool !== 'miner' || !!this.world[gy][gx].ore);
+
+    this.ghostSpr
+      .setTexture(texKey)
+      .setPosition(gx * T + T / 2, gy * T + T / 2)
+      .setAlpha(0.55)
+      .setTint(valid ? 0x88ff88 : 0xff6666)
+      .setAngle((tool === 'miner' || tool === 'smelter') ? dir * 90 : 0);
+  }
+
+  // ── ORE HIGHLIGHTS ───────────────────────────────────────────────────────
+
+  _drawOreHighlights() {
+    this.oreHighlights.clear();
+    if (this.registry.get('selectedTool') !== 'miner') { this.oreHighlights.setAlpha(0); return; }
+    this.oreHighlights.setAlpha(1);
+    for (let gy = 0; gy < H; gy++) {
+      for (let gx = 0; gx < W; gx++) {
+        const ore = this.world[gy][gx].ore;
+        if (!ore) continue;
+        const col = parseInt((ORE_LABEL[ore] || '#ffffff').replace('#', ''), 16);
+        this.oreHighlights.lineStyle(2, col, 0.75);
+        this.oreHighlights.strokeRect(gx * T + 2, gy * T + 2, T - 4, T - 4);
+      }
+    }
+  }
+
+  // ── PRODUCTION TRACKING & GOALS ─────────────────────────────────────────
+
+  _trackProduction() {
+    const stats = this.getStats();
+    for (const [type, n] of Object.entries(stats)) {
+      const prev = this._lastChestTotals[type] || 0;
+      if (n > prev) this.produced[type] = (this.produced[type] || 0) + (n - prev);
+      this._lastChestTotals[type] = n;
+    }
+    this._checkGoal();
+  }
+
+  _checkGoal() {
+    if (this.goalIdx >= GOALS.length) return;
+    const goal = GOALS[this.goalIdx];
+    const met  = Object.entries(goal.req).every(([t, n]) => (this.produced[t] || 0) >= n);
+    if (met) {
+      this.goalIdx++;
+      if (typeof GameAudio !== 'undefined') GameAudio.goalComplete();
+      this.registry.events.emit('goalReached', goal);
+    }
   }
 }
